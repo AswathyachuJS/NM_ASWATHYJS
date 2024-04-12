@@ -1,71 +1,63 @@
 from django.shortcuts import render, redirect
-from django.contrib import messages, auth
+from .models import Team
+from cars.models import Car
 from django.contrib.auth.models import User
-from contacts.models import Contact
-from django.contrib.auth.decorators import login_required
+from django.core.mail import send_mail
+from django.contrib import messages
 
 # Create your views here.
 
-def login(request):
-    if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-
-        user = auth.authenticate(username=username, password=password)
-
-        if user is not None:
-            auth.login(request, user)
-            messages.success(request, 'You are now logged in.')
-            return redirect('dashboard')
-        else:
-            messages.error(request, 'Invalid login credentials')
-            return redirect('login')
-    return render(request, 'accounts/login.html')
-
-def register(request):
-    if request.method == 'POST':
-        firstname = request.POST['firstname']
-        lastname = request.POST['lastname']
-        username = request.POST['username']
-        email = request.POST['email']
-        password = request.POST['password']
-        confirm_password = request.POST['confirm_password']
-
-        if password == confirm_password:
-            if User.objects.filter(username=username).exists():
-                messages.error(request, 'Username already exists!')
-                return redirect('register')
-            else:
-                if User.objects.filter(email=email).exists():
-                    messages.error(request, 'Email already exists!')
-                    return redirect('register')
-                else:
-                    user = User.objects.create_user(first_name=firstname, last_name=lastname, email=email, username=username, password=password)
-                    auth.login(request, user)
-                    messages.success(request, 'You are now logged in.')
-                    return redirect('dashboard')
-                    user.save()
-                    messages.success(request, 'You are registered successfully.')
-                    return redirect('login')
-        else:
-            messages.error(request, 'Password do not match')
-            return redirect('register')
-    else:
-        return render(request, 'accounts/register.html')
-
-
-@login_required(login_url = 'login')
-def dashboard(request):
-    user_inquiry = Contact.objects.order_by('-create_date').filter(user_id=request.user.id)
-    # count = Contact.objects.order_by('-create_date').filter(user_id=request.user.id).count()
-
+def home(request):
+    teams = Team.objects.all()
+    featured_cars = Car.objects.order_by('-created_date').filter(is_featured=True)
+    all_cars = Car.objects.order_by('-created_date')
+    model_search = Car.objects.values_list('model', flat=True).distinct()
+    city_search = Car.objects.values_list('city', flat=True).distinct()
+    year_search = Car.objects.values_list('year', flat=True).distinct()
+    body_style_search = Car.objects.values_list('body_style', flat=True).distinct()
     data = {
-        'inquiries': user_inquiry,
+        'teams': teams,
+        'featured_cars': featured_cars,
+        'all_cars': all_cars,
+        'model_search': model_search,
+        'city_search': city_search,
+        'year_search': year_search,
+        'body_style_search': body_style_search,
     }
-    return render(request, 'accounts/dashboard.html', data)
+    return render(request, 'pages/home.html', data)
 
-def logout(request):
+
+def about(request):
+    teams = Team.objects.all()
+    data = {
+        'teams': teams,
+    }
+    return render(request, 'pages/about.html', data)
+
+def services(request):
+    return render(request, 'pages/services.html')
+
+def contact(request):
     if request.method == 'POST':
-        auth.logout(request)
-        return redirect('home')
-    return redirect('home')
+        name = request.POST['name']
+        email = request.POST['email']
+        subject = request.POST['subject']
+        phone = request.POST['phone']
+        message = request.POST['message']
+
+        email_subject = 'You have a new message from CarDealer Website regarding ' + subject
+        message_body = 'Name: ' + name + '. Email: ' + email + '. Phone: ' + phone + '. Message: ' + message
+
+        admin_info = User.objects.get(is_superuser=True)
+        admin_email = admin_info.email
+        send_mail(
+                email_subject,
+                message_body,
+                'rathan.kumar049@gmail.com',
+                [admin_email],
+                fail_silently=False,
+            )
+        messages.success(request, 'Thank you for contacting us. We will get back to you shortly')
+        return redirect('contact')
+
+    return render(request, 'pages/contact.html')
