@@ -1,22 +1,23 @@
 # NM_FRIDAYBATCH_FSWD_PROJECT
 
 
-Project implemented by: 
+Project implemented by: ASWATHY J S
 
 
-Name:
+
+Name:J S ASWATHY
 
 
-ID:
+ID:au960221243010
 
 
-College name:
+College name:Arunachala College of Engineering for Women 
 
 
 Login credentials: 
 
-username: root
+username: Aswathy J S
 
 
-Password: root
+Password: Hari1234
 
